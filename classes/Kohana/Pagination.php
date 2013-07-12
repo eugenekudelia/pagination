@@ -15,9 +15,10 @@ class Kohana_Pagination {
 		'current_page'      => array('source' => 'query_string', 'key' => 'page'),
 		'total_items'       => 0,
 		'items_per_page'    => 10,
-		'view'              => 'pagination/basic',
+		'view'              => 'pagination::basic',
 		'auto_hide'         => TRUE,
 		'first_page_in_url' => FALSE,
+		'show_nav_after'    => 1
 	);
 
 	// Current page number
@@ -31,6 +32,9 @@ class Kohana_Pagination {
 
 	// Total page count
 	protected $total_pages;
+
+	// Show navigation_items after number of pages
+	protected $show_nav_after;
 
 	// Item offset for the first item displayed on the current page
 	protected $current_first_item;
@@ -146,6 +150,7 @@ class Kohana_Pagination {
 			{
 				switch ($this->config['current_page']['source'])
 				{
+					case 'uri_string':
 					case 'query_string':
 					case 'mixed':
 						$this->current_page = isset($_GET[$this->config['current_page']['key']])
@@ -171,6 +176,7 @@ class Kohana_Pagination {
 			$this->first_page         = ($this->current_page === 1) ? FALSE : 1;
 			$this->last_page          = ($this->current_page >= $this->total_pages) ? FALSE : $this->total_pages;
 			$this->offset             = (int) (($this->current_page - 1) * $this->items_per_page);
+			$this->show_nav_after     = (int) $this->config['show_nav_after'];
 		}
 
 		// Chainable method
@@ -204,6 +210,10 @@ class Kohana_Pagination {
 
 			case 'mixed':
 				return URL::site(Request::detect_uri()).URL::query(array_merge(Request::current()->param(), array($this->config['current_page']['key'] => $page)));
+
+			case 'uri_string':
+				$query_string = $page !== NULL ? '?'.$this->config['current_page']['key'].'='.$page : '';
+				return Request::current()->uri().$query_string;
 		}
 
 		return '#';
@@ -251,6 +261,16 @@ class Kohana_Pagination {
 
 		// Pass on the whole Pagination object
 		return $view->set(get_object_vars($this))->set('page', $this)->render();
+	}
+
+	/**
+	 * Returns  current offset.
+	 *
+	 * @return  integer
+	 */
+	public function offset()
+	{
+		return $this->offset;
 	}
 
 	/**
